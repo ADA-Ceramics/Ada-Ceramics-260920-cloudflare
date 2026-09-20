@@ -1,14 +1,14 @@
 import type { Metadata } from "next"
 import { SiloL2CategoryPage } from "@/components/silo/l2/SiloL2CategoryPage"
 import { getL2Config, getL2ConfigsByParent } from "@/lib/silo/l2-config"
-
 const PARENT_SLUG = "dinnerware"
-
-/** 预生成本 Silo 全部 L2 路径，确保一键复用全部子分类 */
+/** 预生成本 Silo 全部 L2 路径，增加locale参数适配多语言静态导出 */
 export function generateStaticParams() {
-  return getL2ConfigsByParent(PARENT_SLUG).map((c) => ({ l2: c.slug }))
+  return getL2ConfigsByParent(PARENT_SLUG).map((c) => ({
+    locale: "en",
+    l2: c.slug
+  }))
 }
-
 export async function generateMetadata({
   params,
 }: {
@@ -17,7 +17,6 @@ export async function generateMetadata({
   const { locale, l2 } = await params
   const config = getL2Config(PARENT_SLUG, l2)
   if (!config) return {}
-
   return {
     title: config.metaTitle,
     description: config.metaDescription,
@@ -33,7 +32,6 @@ export async function generateMetadata({
     },
   }
 }
-
 export default async function DinnerwareL2Page({
   params,
 }: {
