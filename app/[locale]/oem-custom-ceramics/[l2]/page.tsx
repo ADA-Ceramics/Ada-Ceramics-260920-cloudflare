@@ -3,14 +3,16 @@ import { OemServicePage } from "@/components/silo/oem/OemServicePage"
 import { OemCaseStudiesPage } from "@/components/silo/oem/OemCaseStudiesPage"
 import { getL2Config, getL2ConfigsByParent } from "@/lib/silo/l2-config"
 import { OEM_CASE_STUDIES_SLUG } from "@/lib/silo/oem-service-config"
+
 const PARENT_SLUG = "oem-custom-ceramics"
 /** 预生成本 Silo 全部 L2 路径，增加locale参数适配多语言静态导出 */
-export function generateStaticParams() {
+export async function generateStaticParams() {
   return getL2ConfigsByParent(PARENT_SLUG).map((c) => ({
     locale: "en",
     l2: c.slug
   }))
 }
+
 export async function generateMetadata({
   params,
 }: {
@@ -34,6 +36,7 @@ export async function generateMetadata({
     },
   }
 }
+
 export default async function OemCustomCeramicsL2Page({
   params,
 }: {
