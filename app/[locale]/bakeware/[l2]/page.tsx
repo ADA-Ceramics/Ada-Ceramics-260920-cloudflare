@@ -3,7 +3,6 @@ import { SiloCategoryPage } from "@/components/silo/SiloCategoryPage"
 import { getSiloConfig } from "@/lib/silo/config"
 import { getL2ConfigsByParent } from '@/lib/silo/l2-config'
 const SILO_SLUG = "bakeware"
-
 export async function generateStaticParams() {
   const list = getL2ConfigsByParent(SILO_SLUG);
   return list.map(item => ({
@@ -11,19 +10,18 @@ export async function generateStaticParams() {
     l2: item.slug
   }));
 }
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string, l2: string }>
 }): Promise<Metadata> {
-  const { l2 } = await params
+  const { locale, l2 } = await params
   const config = getSiloConfig(SILO_SLUG)!
   return {
     title: config.metaTitle,
     description: config.metaDescription,
     keywords: config.metaKeywords,
-    alternates: { canonical: `https://www.adaceramics.com/en/${SILO_SLUG}/${l2}` },
+    alternates: { canonical: `https://www.adaceramics.com/${locale}/${SILO_SLUG}/${l2}` },
     openGraph: {
       title: config.metaTitle,
       description: config.metaDescription,
@@ -32,7 +30,6 @@ export async function generateMetadata({
     },
   }
 }
-
 export default async function BakewarePage({
   params,
 }: {
