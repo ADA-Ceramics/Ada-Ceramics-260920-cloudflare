@@ -3,7 +3,7 @@ import { SiloL2CategoryPage } from "@/components/silo/l2/SiloL2CategoryPage"
 import { getL2Config, getL2ConfigsByParent } from "@/lib/silo/l2-config"
 const PARENT_SLUG = "dinnerware"
 /** 预生成本 Silo 全部 L2 路径，增加locale参数适配多语言静态导出 */
-export function generateStaticParams() {
+export async function generateStaticParams() {
   return getL2ConfigsByParent(PARENT_SLUG).map((c) => ({
     locale: "en",
     l2: c.slug
