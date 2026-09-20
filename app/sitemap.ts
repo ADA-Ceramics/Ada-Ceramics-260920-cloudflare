@@ -1,3 +1,4 @@
+export const dynamic = "force-static";
 import { MetadataRoute } from 'next'
 import { SILO_ORDER, SILO_CONFIGS } from '@/lib/silo/config'
 import { getL2ConfigsByParent } from '@/lib/silo/l2-config'
