@@ -18,13 +18,13 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const post = await getPostBySlug(slug)
-
+  
   if (!post) {
     return {
       title: "Post Not Found | ADA Ceramics",
     }
   }
-
+  
   return {
     title: `${post.title} | ADA Ceramics`,
     description: post.excerpt || `Learn about ceramic tableware, manufacturing & industry insights. Read ${post.title} from ADA Ceramics professional factory blog.`,
@@ -49,10 +49,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params
   const post = await getPostBySlug(slug)
-
+  
   if (!post) {
     notFound()
   }
-
+  
   return <BlogDetail post={post} />
 }
