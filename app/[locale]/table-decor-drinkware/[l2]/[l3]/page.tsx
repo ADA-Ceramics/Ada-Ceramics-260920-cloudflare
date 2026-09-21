@@ -4,10 +4,9 @@ import { getL2Config, getL2ConfigsByParent } from "@/lib/silo/l2-config"
 import { getL3Detail, getL3SlugsForCategory } from "@/lib/silo/l3-products"
 const PARENT_SLUG = "table-decor-drinkware"
 const LOCALES = ["en"]
-
 /** 构建时从 Supabase 拉取本 Silo 全部 L3 单品，生成静态页面 */
 export async function generateStaticParams() {
-  const configs = getL2ConfigsByParent(PARENT_SLUG)
+  const configs = await getL2ConfigsByParent(PARENT_SLUG)
   const params: { locale: string; l2: string; l3: string }[] = []
   for (const config of configs) {
     const slugs = await getL3SlugsForCategory(config.productCategorySlugs)
@@ -19,14 +18,13 @@ export async function generateStaticParams() {
   }
   return params
 }
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; l2: string; l3: string }>
 }): Promise<Metadata> {
   const { locale, l2, l3 } = await params
-  const config = getL2Config(PARENT_SLUG, l2)
+  const config = await getL2Config(PARENT_SLUG, l2)
   if (!config) return {}
   const detail = await getL3Detail(config.productCategorySlugs, l3)
   if (!detail) return {}
@@ -50,7 +48,6 @@ export async function generateMetadata({
     },
   }
 }
-
 export default async function TableDecorL3Page({
   params,
 }: {
