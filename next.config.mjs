@@ -30,9 +30,9 @@ const LEGACY_CATEGORY_TO_SILO = {
 'new-mold-development': 'oem-custom-ceramics/new-mold-development',
 'oem-odm-case-studies': 'oem-custom-ceramics/oem-odm-case-studies',
 }
-
 const nextConfig = {
   output: 'export',
+  turbopack: false,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -50,4 +50,3 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
 }
 export default nextConfig
-
