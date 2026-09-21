@@ -2,14 +2,17 @@ import type { Metadata } from "next"
 import { SiloL3ProductPage } from "@/components/silo/l3/SiloL3ProductPage"
 import { getL2Config, getL2ConfigsByParent } from "@/lib/silo/l2-config"
 import { getL3Detail, getL3SlugsForCategory } from "@/lib/silo/l3-products"
+
 const PARENT_SLUG = "table-decor-drinkware"
 const LOCALES = ["en"]
 /** 构建时从 Supabase 拉取本 Silo 全部 L3 单品，生成静态页面 */
 export async function generateStaticParams() {
   try {
-    const configs = await getL2ConfigsByParent(PARENT_SLUG)
+    // ✅ 删除await，同步本地配置函数
+    const configs = getL2ConfigsByParent(PARENT_SLUG)
     const params: { locale: string; l2: string; l3: string }[] = []
     for (const config of configs) {
+      // ✅ Supabase异步查询，保留await
       const slugs = await getL3SlugsForCategory(config.productCategorySlugs)
       for (const l3 of slugs) {
         for (const locale of LOCALES) {
@@ -23,15 +26,20 @@ export async function generateStaticParams() {
     return []
   }
 }
+
+type PageProps = {
+  params: Promise<{ locale: string; l2: string; l3: string }>
+}
+
 export async function generateMetadata({
   params,
-}: {
-  params: Promise<{ locale: string; l2: string; l3: string }>
-}): Promise<Metadata> {
+}: PageProps): Promise<Metadata> {
   const { locale, l2, l3 } = await params
   try {
-    const config = await getL2Config(PARENT_SLUG, l2)
+    // ✅ 删除await，同步本地配置函数
+    const config = getL2Config(PARENT_SLUG, l2)
     if (!config) return {}
+    // ✅ Supabase异步查询，保留await
     const detail = await getL3Detail(config.productCategorySlugs, l3)
     if (!detail) return {}
     const name = detail.name || config.label
@@ -57,11 +65,10 @@ export async function generateMetadata({
     return {}
   }
 }
+
 export default async function TableDecorL3Page({
   params,
-}: {
-  params: Promise<{ locale: string; l2: string; l3: string }>
-}) {
+}: PageProps) {
   const { locale, l2, l3 } = await params
   return (
     <SiloL3ProductPage
