@@ -32,7 +32,6 @@ const LEGACY_CATEGORY_TO_SILO = {
 }
 const nextConfig = {
   output: 'export',
-  turbopack: false,
   typescript: {
     ignoreBuildErrors: true,
   },
