@@ -7,16 +7,13 @@ import { getProductsByCategory } from "@/lib/supabase/products"
  * 否则视为「不在本细分」返回 null（路由层 notFound），杜绝跨品类混入。
  * 相关产品同样仅取当前 L2 细分下的其他单品。
  */
-
 export type L3Image = { url: string; alt: string }
-
 export type L3RelatedProduct = {
   id: string
   name: string
   slug: string
   main_image: string | null
 }
-
 export type L3Detail = {
   id: string
   name: string
@@ -38,7 +35,7 @@ export type L3Detail = {
 /** 把 Supabase 中可能为对象 / JSON 字符串 / 数组的规格字段，归一化为 label/value 列表 */
 function normalizeSpecifications(raw: unknown): { label: string; value: string }[] {
   if (!raw) return []
-  let value: any = raw
+  let value: unknown = raw
   if (typeof raw === "string") {
     const trimmed = raw.trim()
     if (!trimmed) return []
@@ -52,9 +49,9 @@ function normalizeSpecifications(raw: unknown): { label: string; value: string }
   if (Array.isArray(value)) {
     return value
       .map((item) => {
-        if (item && typeof item === "object") {
-          const label = String(item.label ?? item.name ?? item.key ?? "").trim()
-          const v = String(item.value ?? item.val ?? "").trim()
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          const label = String((item as Record<string,unknown>).label ?? (item as Record<string,unknown>).name ?? (item as Record<string,unknown>).key ?? "").trim()
+          const v = String((item as Record<string,unknown>).value ?? (item as Record<string,unknown>).val ?? "").trim()
           if (label && v) return { label, value: v }
           return null
         }
@@ -63,8 +60,8 @@ function normalizeSpecifications(raw: unknown): { label: string; value: string }
       })
       .filter(Boolean) as { label: string; value: string }[]
   }
-  if (value && typeof value === "object") {
-    return Object.entries(value)
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return Object.entries(value as Record<string,unknown>)
       .map(([k, v]) => ({ label: String(k).trim(), value: String(v ?? "").trim() }))
       .filter((x) => x.label && x.value)
   }
@@ -74,7 +71,7 @@ function normalizeSpecifications(raw: unknown): { label: string; value: string }
 /** 把 features 字段（数组 / JSON 字符串 / 换行文本）归一化为字符串数组 */
 function normalizeFeatures(raw: unknown): string[] {
   if (!raw) return []
-  let value: any = raw
+  let value: unknown = raw
   if (typeof raw === "string") {
     const trimmed = raw.trim()
     if (!trimmed) return []
@@ -90,29 +87,28 @@ function normalizeFeatures(raw: unknown): string[] {
   if (Array.isArray(value)) {
     return value.map((s) => String(s ?? "").trim()).filter(Boolean)
   }
-  if (value && typeof value === "object") {
-    return Object.values(value).map((s) => String(s ?? "").trim()).filter(Boolean)
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return Object.values(value as Record<string,unknown>).map((s) => String(s ?? "").trim()).filter(Boolean)
   }
   return []
 }
 
-function buildImages(p: any): L3Image[] {
+function buildImages(p: unknown): L3Image[] {
+  const product = p as Record<string,unknown>
   const altBase = (name: string) =>
     `wholesale ceramic ${name} custom OEM tableware for Horeca bulk buyers`
-  const gallery: string[] = Array.isArray(p?.gallery_images) ? p.gallery_images : []
-  const galleryAlt: string[] = Array.isArray(p?.gallery_images_alt) ? p.gallery_images_alt : []
-
+  const gallery: string[] = Array.isArray(product?.gallery_images) ? product.gallery_images : []
+  const galleryAlt: string[] = Array.isArray(product?.gallery_images_alt) ? product.gallery_images_alt : []
   const images: L3Image[] = [
     {
-      url: p?.main_image ?? "",
-      alt: p?.main_image_alt || altBase(p?.name ?? "product"),
+      url: (product?.main_image ?? "") as string,
+      alt: (product?.main_image_alt || altBase((product?.name ?? "product") as string)) as string,
     },
     ...gallery.map((url, i) => ({
       url,
-      alt: galleryAlt[i] || `${p?.name ?? "product"} - detail ${i + 1}`,
+      alt: galleryAlt[i] || `${(product?.name ?? "product") as string} - detail ${i + 1}`,
     })),
   ].filter((img) => img.url)
-
   return images
 }
 
@@ -126,55 +122,58 @@ export async function getL3Detail(
   productSlug: string,
 ): Promise<L3Detail | null> {
   for (const slug of categorySlugs) {
-    let rows: any[] = []
+    let rows: unknown[] = []
     try {
       rows = await getProductsByCategory(slug)
-    } catch {
+    } catch (err) {
       rows = []
     }
     if (!rows || rows.length === 0) continue
-
-    const match = rows.find((p) => p?.slug === productSlug)
+    const match = rows.find((p) => (p as Record<string,unknown>)?.slug === productSlug)
     if (!match) continue
-
+    const matchObj = match as Record<string,unknown>
     const related: L3RelatedProduct[] = rows
-      .filter((p) => p?.slug && p.slug !== productSlug)
+      .filter((p) => {
+        const item = p as Record<string,unknown>
+        return item?.slug && item.slug !== productSlug
+      })
       .slice(0, 8)
-      .map((p) => ({
-        id: p.id,
-        name: p.name ?? "",
-        slug: p.slug ?? "",
-        main_image: p.main_image ?? null,
-      }))
-
+      .map((p) => {
+        const item = p as Record<string,unknown>
+        return {
+          id: (item.id ?? "") as string,
+          name: (item.name ?? "") as string,
+          slug: (item.slug ?? "") as string,
+          main_image: (item.main_image ?? null) as string | null,
+        }
+      })
     return {
-      id: match.id,
-      name: match.name ?? "",
-      slug: match.slug ?? "",
-      description: typeof match.description === "string" ? match.description : "",
+      id: (matchObj.id ?? "") as string,
+      name: (matchObj.name ?? "") as string,
+      slug: (matchObj.slug ?? "") as string,
+      description: typeof matchObj.description === "string" ? matchObj.description : "",
       images: buildImages(match),
-      specifications: normalizeSpecifications(match.specifications),
-      features: normalizeFeatures(match.features),
-      price: typeof match.price === "number" ? match.price : null,
+      specifications: normalizeSpecifications(matchObj.specifications),
+      features: normalizeFeatures(matchObj.features),
+      price: typeof matchObj.price === "number" ? matchObj.price : null,
       categorySlug: slug,
       related,
     }
   }
-
   return null
 }
 
 /** 预生成静态参数用：取某 L2 细分下全部单品 slug（严格隔离） */
 export async function getL3SlugsForCategory(categorySlugs: string[]): Promise<string[]> {
   for (const slug of categorySlugs) {
-    let rows: any[] = []
+    let rows: unknown[] = []
     try {
       rows = await getProductsByCategory(slug)
     } catch {
       rows = []
     }
     if (rows && rows.length > 0) {
-      return rows.map((p) => p?.slug).filter(Boolean)
+      return rows.map((p) => (p as Record<string,unknown>)?.slug).filter(Boolean) as string[]
     }
   }
   return []
