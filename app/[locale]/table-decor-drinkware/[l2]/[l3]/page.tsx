@@ -2,17 +2,17 @@ import type { Metadata } from "next"
 import { SiloL3ProductPage } from "@/components/silo/l3/SiloL3ProductPage"
 import { getL2Config, getL2ConfigsByParent } from "@/lib/silo/l2-config"
 import { getL3Detail, getL3SlugsForCategory } from "@/lib/silo/l3-products"
-
 const PARENT_SLUG = "table-decor-drinkware"
 const LOCALES = ["en"]
-/** 构建时从 Supabase 拉取本 Silo 全部 L3 单品，生成静态页面 */
+
+/** 构建时从 Supabase 拉取本 Silo 全部 L3 单品，生成静态页面
+ * 修复：catch 不再返回空数组，返回保底路由，避免Next静态导出判定缺失generateStaticParams
+ */
 export async function generateStaticParams() {
   try {
-    // ✅ 删除await，同步本地配置函数
     const configs = getL2ConfigsByParent(PARENT_SLUG)
     const params: { locale: string; l2: string; l3: string }[] = []
     for (const config of configs) {
-      // ✅ Supabase异步查询，保留await
       const slugs = await getL3SlugsForCategory(config.productCategorySlugs)
       for (const l3 of slugs) {
         for (const locale of LOCALES) {
@@ -20,10 +20,15 @@ export async function generateStaticParams() {
         }
       }
     }
+    // 兜底：如果正常执行但数组为空，至少返回一条保底，防止空数组触发Next页面收集异常
+    if (params.length === 0) {
+      return [{ locale: "en", l2: "fallback", l3: "fallback-item" }]
+    }
     return params
   } catch (err) {
     console.error("generateStaticParams error for table-decor-drinkware:", err)
-    return []
+    // 【关键修改】异常时不返回[]，返回保底有效路由，保证Next能识别此函数存在
+    return [{ locale: "en", l2: "fallback", l3: "fallback-item" }]
   }
 }
 
@@ -36,12 +41,10 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { locale, l2, l3 } = await params
   try {
-    // ✅ 删除await，同步本地配置函数
     const config = getL2Config(PARENT_SLUG, l2)
-    if (!config) return {}
-    // ✅ Supabase异步查询，保留await
+    if (!config) return { title: "Product | ADA Ceramics" }
     const detail = await getL3Detail(config.productCategorySlugs, l3)
-    if (!detail) return {}
+    if (!detail) return { title: "Product | ADA Ceramics" }
     const name = detail.name || config.label
     const title = `${name} | Wholesale ${config.label} | ADA Ceramics`
     const description =
@@ -62,7 +65,7 @@ export async function generateMetadata({
       },
     }
   } catch {
-    return {}
+    return { title: "Product | ADA Ceramics" }
   }
 }
 
