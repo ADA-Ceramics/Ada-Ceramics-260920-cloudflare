@@ -6,17 +6,22 @@ const PARENT_SLUG = "table-decor-drinkware"
 const LOCALES = ["en"]
 /** 构建时从 Supabase 拉取本 Silo 全部 L3 单品，生成静态页面 */
 export async function generateStaticParams() {
-  const configs = await getL2ConfigsByParent(PARENT_SLUG)
-  const params: { locale: string; l2: string; l3: string }[] = []
-  for (const config of configs) {
-    const slugs = await getL3SlugsForCategory(config.productCategorySlugs)
-    for (const l3 of slugs) {
-      for (const locale of LOCALES) {
-        params.push({ locale, l2: config.slug, l3 })
+  try {
+    const configs = await getL2ConfigsByParent(PARENT_SLUG)
+    const params: { locale: string; l2: string; l3: string }[] = []
+    for (const config of configs) {
+      const slugs = await getL3SlugsForCategory(config.productCategorySlugs)
+      for (const l3 of slugs) {
+        for (const locale of LOCALES) {
+          params.push({ locale, l2: config.slug, l3 })
+        }
       }
     }
+    return params
+  } catch (err) {
+    console.error("generateStaticParams error for table-decor-drinkware:", err)
+    return []
   }
-  return params
 }
 export async function generateMetadata({
   params,
@@ -24,28 +29,32 @@ export async function generateMetadata({
   params: Promise<{ locale: string; l2: string; l3: string }>
 }): Promise<Metadata> {
   const { locale, l2, l3 } = await params
-  const config = await getL2Config(PARENT_SLUG, l2)
-  if (!config) return {}
-  const detail = await getL3Detail(config.productCategorySlugs, l3)
-  if (!detail) return {}
-  const name = detail.name || config.label
-  const title = `${name} | Wholesale ${config.label} | ADA Ceramics`
-  const description =
-    detail.description?.trim() ||
-    `Wholesale ${name} direct from a Chaozhou ceramic factory. FDA & LFGB certified, food-safe, low MOQ and full OEM/ODM customization with custom logo printing for cafés, hospitality and retail brands.`
-  return {
-    title,
-    description,
-    keywords: `wholesale ${name}, bulk ${config.keyword}, ${config.keyword} supplier, custom ${config.keyword}, OEM ODM ${config.keyword}, private label ${config.keyword}, custom logo ${config.keyword}, wholesale drinkware manufacturer, FDA LFGB ${config.keyword}, low MOQ ${config.keyword}`,
-    alternates: {
-      canonical: `https://www.adaceramics.com/${locale}/${PARENT_SLUG}/${l2}/${l3}`,
-    },
-    openGraph: {
+  try {
+    const config = await getL2Config(PARENT_SLUG, l2)
+    if (!config) return {}
+    const detail = await getL3Detail(config.productCategorySlugs, l3)
+    if (!detail) return {}
+    const name = detail.name || config.label
+    const title = `${name} | Wholesale ${config.label} | ADA Ceramics`
+    const description =
+      detail.description?.trim() ||
+      `Wholesale ${name} direct from a Chaozhou ceramic factory. FDA & LFGB certified, food-safe, low MOQ and full OEM/ODM customization with custom logo printing for cafés, hospitality and retail brands.`
+    return {
       title,
       description,
-      images: detail.images.length > 0 ? [detail.images[0].url] : [config.bannerImage],
-      type: "website",
-    },
+      keywords: `wholesale ${name}, bulk ${config.keyword}, ${config.keyword} supplier, custom ${config.keyword}, OEM ODM ${config.keyword}, private label ${config.keyword}, custom logo ${config.keyword}, wholesale drinkware manufacturer, FDA LFGB ${config.keyword}, low MOQ ${config.keyword}`,
+      alternates: {
+        canonical: `https://www.adaceramics.com/${locale}/${PARENT_SLUG}/${l2}/${l3}`,
+      },
+      openGraph: {
+        title,
+        description,
+        images: detail.images.length > 0 ? [detail.images[0].url] : [config.bannerImage],
+        type: "website",
+      },
+    }
+  } catch {
+    return {}
   }
 }
 export default async function TableDecorL3Page({
