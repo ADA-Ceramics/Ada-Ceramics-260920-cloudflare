@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import { SiloL3ProductPage } from "@/components/silo/l3/SiloL3ProductPage"
 import { getL2Config, getL2ConfigsByParent } from "@/lib/silo/l2-config"
 import { getL3Detail, getL3SlugsForCategory } from "@/lib/silo/l3-products"
-
 const PARENT_SLUG = "dinnerware"
 const LOCALES = ["en"]
 /** 构建时从 Supabase 拉取本 Silo 全部 L3 单品，生成静态页面 */
@@ -26,11 +25,9 @@ export async function generateStaticParams() {
     return []
   }
 }
-
 type PageProps = {
   params: Promise<{ locale: string; l2: string; l3: string }>
 }
-
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
@@ -46,7 +43,7 @@ export async function generateMetadata({
     const title = `${name} | Wholesale ${config.label} | ADA Ceramics`
     const description =
       detail.description?.trim() ||
-      `Wholesale ${name} direct from a Chaozhou ceramic factory. FDA & LFGB certified, oven safe, low MOQ and full OEM/ODM customization for restaurants, hotels and bakeries.`
+      `Wholesale ${name} direct from a Chaozhou ceramic factory. FDA & LFGB certified, food-safe, low MOQ and full OEM/ODM customization for restaurants, hotels and hospitality brands.`
     return {
       title,
       description,
@@ -65,7 +62,6 @@ export async function generateMetadata({
     return {}
   }
 }
-
 export default async function DinnerwareL3Page({
   params,
 }: PageProps) {
